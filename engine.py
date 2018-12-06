@@ -1,6 +1,7 @@
 import libtcodpy as libtcod
 
 from entity import Entity
+from fov_functions import initialize_fov, recompute_fov
 from input_handlers import handle_keys
 from map_objects.game_map import GameMap
 from render_functions import clear_all, render_all
@@ -20,10 +21,17 @@ def main():
 	room_min_size = 6
 	max_rooms = 30
 
+	# FOV constants
+	fov_algorithm = 0
+	fov_light_walls = True
+	fov_radius = 10
+
 	# Colors
 	colors = {
-		'dark_wall': libtcod.Color(5,5,25),
-		'dark_ground': libtcod.Color(100, 100, 150)
+		'dark_wall': libtcod.Color(50,50,75),
+		'dark_ground': libtcod.Color(100, 100, 150),
+		'light_wall': libtcod.Color(130, 110, 50),
+		'light_ground': libtcod.Color(200, 180, 50)
 	}
 
 	# Starting entities
@@ -43,6 +51,11 @@ def main():
 	game_map = GameMap(map_width, map_height)
 	game_map.make_map(max_rooms, room_min_size, room_max_size, map_width, map_height, player)
 
+	# Flags if we need to update FOV
+	fov_recompute = True
+
+	fov_map = initialize_fov(game_map)
+
 	# Holds keyboard and mouse input
 	key = libtcod.Key()
 	mouse = libtcod.Mouse()
@@ -52,8 +65,15 @@ def main():
 		# Input listener I guess
 		libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS, key, mouse)
 
+		# Update fov if needed
+		if fov_recompute:
+			recompute_fov(fov_map, player.x, player.y, fov_radius, fov_light_walls, fov_algorithm)
+
 		# Render all entities
-		render_all(con, entities, game_map, screen_width, screen_height, colors)
+		render_all(con, entities, game_map, fov_map, fov_recompute, screen_width, screen_height, colors)
+
+		fov_recompute = False
+
 		# Clear console for next frame
 		libtcod.console_flush()
 
@@ -73,6 +93,8 @@ def main():
 			dx, dy = move
 			if not game_map.is_blocked(player.x + dx, player.y + dy):
 				player.move(dx, dy)
+
+				fov_recompute = True
 
 		# Exit on escape
 		if exit:
