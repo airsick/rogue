@@ -34,11 +34,11 @@ def main():
 		# Draws @ to screen at 1, 1
 		libtcod.console_put_char(con, player_x, player_y, '@', libtcod.BKGND_NONE)
 		libtcod.console_blit(con, 0, 0, screen_width, screen_height, 0, 0, 0)
-		# Clear old position
-		libtcod.console_put_char(con, player_x, player_y, ' ', libtcod.BKGND_NONE)
 		# Push changes to screen
 		libtcod.console_flush()
 
+		# Clear old position (Idk why its after console flush)
+		libtcod.console_put_char(con, player_x, player_y, ' ', libtcod.BKGND_NONE)
 
 		# Determine action
 		action = handle_keys(key)
