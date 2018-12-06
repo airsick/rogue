@@ -17,7 +17,7 @@ def main():
 
 	# Colors
 	colors = {
-		'dark_wall': libtcod.Color(50, 50, 150),
+		'dark_wall': libtcod.Color(200, 200, 200),
 		'dark_ground': libtcod.Color(5,5,25)
 	}
 
