@@ -15,10 +15,15 @@ def main():
 	map_width = 80
 	map_height = 45
 
+	# Generator constants
+	room_max_size = 10
+	room_min_size = 6
+	max_rooms = 30
+
 	# Colors
 	colors = {
-		'dark_wall': libtcod.Color(200, 200, 200),
-		'dark_ground': libtcod.Color(5,5,25)
+		'dark_wall': libtcod.Color(5,5,25),
+		'dark_ground': libtcod.Color(100, 100, 150)
 	}
 
 	# Starting entities
@@ -36,6 +41,7 @@ def main():
 
 	# Create the game map
 	game_map = GameMap(map_width, map_height)
+	game_map.make_map(max_rooms, room_min_size, room_max_size, map_width, map_height, player)
 
 	# Holds keyboard and mouse input
 	key = libtcod.Key()
