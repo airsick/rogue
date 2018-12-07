@@ -1,10 +1,11 @@
 import libtcodpy as libtcod
 
 from components.fighter import Fighter
+from components.inventory import Inventory
 from death_functions import kill_monster, kill_player
 from entity import Entity, get_blocking_entities_at_location
 from fov_functions import initialize_fov, recompute_fov
-from game_messages import MessageLog
+from game_messages import Message, MessageLog
 from game_states import GameStates
 from input_handlers import handle_keys
 from map_objects.game_map import GameMap
@@ -42,6 +43,7 @@ def main():
 	fov_radius = 10
 
 	max_monsters_per_room = 3
+	max_items_per_room = 2
 
 	# Colors
 	colors = {
@@ -53,7 +55,8 @@ def main():
 
 	# Starting entities
 	fighter_component = Fighter(hp=30, defense=2, power=5)
-	player = Entity(0, 0, '@', libtcod.white, 'Player', blocks = True, render_order = RenderOrder.ACTOR, fighter = fighter_component)
+	inventory_component = Inventory(26)
+	player = Entity(0, 0, '@', libtcod.white, 'Player', blocks = True, render_order = RenderOrder.ACTOR, fighter = fighter_component, inventory=inventory_component)
 	entities = [player]
 
 	# Set font
@@ -67,7 +70,8 @@ def main():
 
 	# Create the game map
 	game_map = GameMap(map_width, map_height)
-	game_map.make_map(max_rooms, room_min_size, room_max_size, map_width, map_height, player, entities, max_monsters_per_room)
+	game_map.make_map(max_rooms, room_min_size, room_max_size, map_width, map_height, player, entities,
+					max_monsters_per_room, max_items_per_room)
 
 	# Flags if we need to update FOV
 	fov_recompute = True
@@ -110,6 +114,7 @@ def main():
 
 		# Process the action object
 		move = action.get('move')
+		pickup = action.get('pickup')
 		exit = action.get('exit')
 		fullscreen = action.get('fullscreen')
 
@@ -138,6 +143,16 @@ def main():
 					fov_recompute = True
 
 				game_state = GameStates.ENEMY_TURN
+		# Picking up an item
+		elif pickup and game_state == GameStates.PLAYERS_TURN:
+			for entity in entities:
+				if entity.item and entity.x == player.x and entity.y == player.y:
+					pickup_results = player.inventory.add_item(entity)
+					player_turn_results.extend(pickup_results)
+
+					break
+			else:
+				message_log.add_message(Message('There is nothing here to pick up.', libtcod.yellow))
 
 		# Exit on escape
 		if exit:
@@ -151,6 +166,7 @@ def main():
 		for player_turn_result in player_turn_results:
 			message = player_turn_result.get('message')
 			dead_entity = player_turn_result.get('dead')
+			item_added = player_turn_result.get('item_added')
 
 			if message:
 				message_log.add_message(message)
@@ -162,6 +178,11 @@ def main():
 					message = kill_monster(dead_entity)
 
 				message_log.add_message(message)
+
+			if item_added:
+				entities.remove(item_added)
+
+				game_state = GameStates.ENEMY_TURN
 
 		# Enemy Movement
 		if game_state == GameStates.ENEMY_TURN:
