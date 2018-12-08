@@ -9,7 +9,9 @@ from components.item import Item
 
 from entity import Entity
 
-from item_functions import heal
+from game_messages import Message
+
+from item_functions import heal, cast_lightning, cast_fireball, cast_confuse
 
 from map_objects.tile import Tile
 from map_objects.rectangle import Rect
@@ -129,15 +131,37 @@ class GameMap:
 
 				entities.append(monster)
 
+		# Place items
 		for i in range(number_of_items):
 			x = randint(room.x1 + 1, room.x2 - 1)
 			y = randint(room.y1 + 1, room.y2 - 1)
 
 			if not any([entity for entity in entities if entity.x == x and entity.y == y]):
-				item_component = Item(use_function=heal, amount=4)
-				item = Entity(x, y, '!', libtcod.violet, 'Healing Potion', render_order=RenderOrder.ITEM,
-								item=item_component)
+				item_chance = randint(0,100)
 
+				# Healing potion
+				if item_chance < 70:
+					item_component = Item(use_function=heal, amount=4)
+					item = Entity(x, y, '!', libtcod.violet, 'Healing Potion', render_order=RenderOrder.ITEM,
+									item=item_component)
+				# Lightning scroll
+				elif item_chance < 90:
+					item_component = Item(use_function=cast_lightning, damage=20, maximum_range=5)
+					item = Entity(x, y, '#', libtcod.yellow, 'Lightning Scroll', render_order=RenderOrder.ITEM,
+									item=item_component)
+				# Fireball scroll
+				elif item_chance < 90:
+					item_component = Item(use_function=cast_fireball, targeting=True, targeting_message=Message(
+										'Left-click a target tile for the fireball, or right-click to cancel.', libtcod.light_cyan),
+										damage=12, radius=3)
+					item = Entity(x, y, '#', libtcod.red, 'Fireball Scroll', render_order=RenderOrder.ITEM,
+									item=item_component)
+				# Confusion scroll
+				else:
+					item_component = Item(use_function=cast_confuse, targeting=True, targeting_message=Message(
+										'Left-click aan enemy to confuse it, or right-click to cancel.', libtcod.light_cyan),)
+					item = Entity(x, y, '#', libtcod.light_pink, 'Confusion Scroll', render_order=RenderOrder.ITEM,
+									item=item_component)
 				entities.append(item)
 
 	def is_blocked(self, x, y):

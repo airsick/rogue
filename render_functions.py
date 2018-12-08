@@ -53,8 +53,8 @@ def render_all(con, panel, entities, player, game_map, fov_map, fov_recompute, m
 
 					game_map.tiles[x][y].explored = True
 				# And dark colors otherwise
-				else: #fully explored for debug
-				#elif game_map.tiles[x][y].explored:
+				#else: #fully explored for debug
+				elif game_map.tiles[x][y].explored:
 					if wall:
 						libtcod.console_set_char_background(con, x, y, colors.get('dark_wall'), libtcod.BKGND_SET)
 					else:
