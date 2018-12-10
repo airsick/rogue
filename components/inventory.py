@@ -22,7 +22,7 @@ class Inventory:
 				'message': Message('You pick up the {0}!'.format(item.name), libtcod.blue)
 			})
 
-		self.items.append(item)
+			self.items.append(item)
 
 		return results
 
