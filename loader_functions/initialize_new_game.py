@@ -50,6 +50,9 @@ def get_constants():
 	fov_light_walls = True
 	fov_radius = 10
 
+	# Number of players
+	player_count = 3
+
 	# Colors
 	colors = {
 		'dark_wall': libtcod.Color(0,0,100),
@@ -76,31 +79,37 @@ def get_constants():
 	    'fov_algorithm': fov_algorithm,
 	    'fov_light_walls': fov_light_walls,
 	    'fov_radius': fov_radius,
+	    'player_count': player_count,
 	    'colors': colors
 	}
 
 	return constants
 
 def get_game_variables(constants):
-	# Building the player
-	fighter_component = Fighter(hp=100, defense=1, power=2)
-	inventory_component = Inventory(26)
-	level_component = Level()
-	equipment_component = Equipment()
-	player = Entity(0, 0, '@', libtcod.white, 'Player', blocks = True, render_order = RenderOrder.ACTOR,
-					fighter = fighter_component, inventory=inventory_component, level=level_component,
-					equipment=equipment_component)
-	entities = [player]
+	entities = []
+	players = []
 
-	# Give the player a dagger to start with
-	equippable_component = Equippable(EquipmentSlots.MAIN_HAND, power_bonus=2)
-	dagger = Entity(0, 0, '-', libtcod.sky, 'Dagger', equippable=equippable_component)
-	player.inventory.add_item(dagger)
-	player.equipment.toggle_equip(dagger)
+	for i in range(constants['player_count']):
+		# Building the players
+		fighter_component = Fighter(hp=100, defense=1, power=2)
+		inventory_component = Inventory(26)
+		level_component = Level()
+		equipment_component = Equipment()
+		players.append(Entity(0, 0, '@', libtcod.blue, 'Player', blocks = True, render_order = RenderOrder.ACTOR,
+						fighter = fighter_component, inventory=inventory_component, level=level_component,
+						equipment=equipment_component))
+		
 
+		# Give the player a dagger to start with
+		equippable_component = Equippable(EquipmentSlots.MAIN_HAND, power_bonus=2)
+		dagger = Entity(0, 0, '-', libtcod.sky, 'Dagger', equippable=equippable_component)
+		players[-1].inventory.add_item(dagger)
+		players[-1].equipment.toggle_equip(dagger)
+
+		entities.append(players[-1])
 	# Create the game map
 	game_map = GameMap(constants['map_width'], constants['map_height'])
-	game_map.make_map(constants['max_rooms'], constants['room_min_size'], constants['room_max_size'], constants['map_width'], constants['map_height'], player, entities)
+	game_map.make_map(constants['max_rooms'], constants['room_min_size'], constants['room_max_size'], constants['map_width'], constants['map_height'], players, entities)
 
 	# Message log
 	message_log = MessageLog(constants['message_x'], constants['message_width'], constants['message_height'])
@@ -108,4 +117,4 @@ def get_game_variables(constants):
 	# Keep track of who's turn it is
 	game_state = GameStates.PLAYERS_TURN
 
-	return player, entities, game_map, message_log, game_state
+	return players, entities, game_map, message_log, game_state

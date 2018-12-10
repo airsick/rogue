@@ -36,7 +36,7 @@ class GameMap:
 
 		return tiles
 
-	def make_map(self, max_rooms, room_min_size, room_max_size, map_width, map_height, player, entities):
+	def make_map(self, max_rooms, room_min_size, room_max_size, map_width, map_height, players, entities):
 		rooms = []
 		num_rooms = 0
 
@@ -73,9 +73,17 @@ class GameMap:
 				center_of_last_room_y = new_y
 
 				if num_rooms == 0:
-					# this is the first room, where the player starts at
-					player.x = new_x
-					player.y = new_y
+					# this is the first room, where the players start at
+					players_placed = 0
+
+					while players_placed != len(players):
+						# Choose a random location in the room
+						x = randint(new_room.x1 + 1, new_room.x2 - 1)
+						y = randint(new_room.y1 + 1, new_room.y2 - 1)
+						if not any([entity for entity in players if entity.x == x and entity.y == y]):
+							players[players_placed].x = x
+							players[players_placed].y = y
+							players_placed += 1
 				else:
 					# all rooms after the first:
 					# connect it to the previous room with a tunnel
@@ -216,15 +224,18 @@ class GameMap:
 
 		return False
 
-	def next_floor(self, player, message_log, constants):
+	def next_floor(self, players, message_log, constants):
 		self.dungeon_level += 1
-		entities = [player]
+		entities = []
+		for player in players:
+			entities.append(player)
 
 		self.tiles = self.initialize_tiles()
 		self.make_map(constants['max_rooms'], constants['room_min_size'], constants['room_max_size'],
-					  constants['map_width'], constants['map_height'], player, entities)
+					  constants['map_width'], constants['map_height'], players, entities)
 
-		player.fighter.heal(player.fighter.max_hp // 2)
+		for player in players:
+			player.fighter.heal(player.fighter.max_hp // 2)
 
 		message_log.add_message(Message('You take a moment to rest, and recover your strength.', libtcod.light_violet))
 

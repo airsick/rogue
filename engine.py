@@ -24,7 +24,7 @@ def main():
 	con = libtcod.console_new(constants['screen_width'], constants['screen_height'])
 	panel = libtcod.console_new(constants['screen_width'], constants['panel_height'])
 
-	player = None
+	players = []
 	entity = []
 	game_map = None
 	message_log = None
@@ -60,13 +60,13 @@ def main():
 			if show_load_error_message and (new_game or load_saved_game or exit_game):
 				show_load_error_message = False
 			elif new_game:
-				player, entities, game_map, message_log, game_state = get_game_variables(constants)
+				players, entities, game_map, message_log, game_state = get_game_variables(constants)
 				game_state = GameStates.PLAYERS_TURN
 
 				show_main_menu = False
 			elif load_saved_game:
 				try:
-					player, entities, game_map, message_log, game_state = load_game()
+					players, entities, game_map, message_log, game_state = load_game(constants['player_count'])
 					game_state = GameStates.PLAYERS_TURN
 
 					show_main_menu = False
@@ -76,15 +76,13 @@ def main():
 				break
 		else:
 			libtcod.console_clear(con)
-			play_game(player, entities, game_map, message_log, game_state, con, panel, constants)
+			play_game(players, entities, game_map, message_log, game_state, con, panel, constants)
 
 			show_main_menu = True
 
 
-	#player, entities, game_map, message_log, game_state = get_game_variables(constants)
 
-
-def play_game(player, entities, game_map, message_log, game_state, con, panel, constants):
+def play_game(players, entities, game_map, message_log, game_state, con, panel, constants):
 	# Flags if we need to update FOV
 	fov_recompute = True
 
@@ -99,6 +97,9 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
 
 	targeting_item = None
 
+	active_player = 0
+	players[active_player].color = libtcod.white
+
 	# Game loop
 	while not libtcod.console_is_window_closed():
 		# Input listener I guess
@@ -106,10 +107,10 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
 
 		# Update fov if needed
 		if fov_recompute:
-			recompute_fov(fov_map, player.x, player.y, constants['fov_radius'], constants['fov_light_walls'], constants['fov_algorithm'])
+			recompute_fov(fov_map, players[active_player].x, players[active_player].y, constants['fov_radius'], constants['fov_light_walls'], constants['fov_algorithm'])
 
 		# Render all entities
-		render_all(con, panel, entities, player, game_map, fov_map, fov_recompute, message_log, constants['screen_width'], constants['screen_height'],
+		render_all(con, panel, entities, players, active_player, game_map, fov_map, fov_recompute, message_log, constants['screen_width'], constants['screen_height'],
 					constants['bar_width'], constants['panel_height'], constants['panel_y'], mouse, constants['colors'], game_state)
 
 		fov_recompute = False
@@ -147,31 +148,43 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
 		# Movement
 		if move and game_state == GameStates.PLAYERS_TURN:
 			dx, dy = move
-			destination_x = player.x + dx
-			destination_y = player.y + dy
+			destination_x = players[active_player].x + dx
+			destination_y = players[active_player].y + dy
 
 
 			if not game_map.is_blocked(destination_x, destination_y):
 				target = get_blocking_entities_at_location(entities, destination_x, destination_y)
 				# If the way is blocked by a baddie
 				if target:
-					attack_results = player.fighter.attack(target)
+					attack_results = players[active_player].fighter.attack(target)
 					player_turn_results.extend(attack_results)
 				else:
-					player.move(dx, dy)
+					players[active_player].move(dx, dy)
 
 					fov_recompute = True
 
-				game_state = GameStates.ENEMY_TURN
+				# Change active player
+				players[active_player].color = libtcod.blue
+				players[(active_player+1)%constants['player_count']].color = libtcod.white
+				active_player += 1
+				if active_player >= constants['player_count']:
+					active_player = 0
+					game_state = GameStates.ENEMY_TURN
 
 		if wait:
-			game_state = GameStates.ENEMY_TURN
+			# Change active player
+			players[active_player].color = libtcod.blue
+			players[(active_player+1)%constants['player_count']].color = libtcod.white
+			active_player += 1
+			if active_player >= constants['player_count']:
+				active_player = 0
+				game_state = GameStates.ENEMY_TURN
 
 		# Picking up an item
 		elif pickup and game_state == GameStates.PLAYERS_TURN:
 			for entity in entities:
-				if entity.item and entity.x == player.x and entity.y == player.y:
-					pickup_results = player.inventory.add_item(entity)
+				if entity.item and entity.x == players[active_player].x and entity.y == players[active_player].y:
+					pickup_results = players[active_player].inventory.add_item(entity)
 					player_turn_results.extend(pickup_results)
 
 					break
@@ -189,19 +202,19 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
 			game_state = GameStates.DROP_INVENTORY
 
 		# Choose inventory item
-		if inventory_index is not None and previous_game_state != GameStates.PLAYER_DEAD and inventory_index < len(player.inventory.items):
-			item = player.inventory.items[inventory_index]
+		if inventory_index is not None and previous_game_state != GameStates.PLAYER_DEAD and inventory_index < len(players[active_player].inventory.items):
+			item = players[active_player].inventory.items[inventory_index]
 			
 			if game_state == GameStates.SHOW_INVENTORY:
-				player_turn_results.extend(player.inventory.use(item, entities=entities, fov_map=fov_map))
+				player_turn_results.extend(players[active_player].inventory.use(item, entities=entities, fov_map=fov_map))
 			elif game_state == GameStates.DROP_INVENTORY:
-				player_turn_results.extend(player.inventory.drop_item(item))
+				player_turn_results.extend(players[active_player].inventory.drop_item(item))
 
 		# Take stairs
 		if take_stairs and game_state == GameStates.PLAYERS_TURN:
 			for entity in entities:
-				if entity.stairs and entity.x == player.x and entity.y == player.y:
-					entities = game_map.next_floor(player, message_log, constants)
+				if entity.stairs and entity.x == players[active_player].x and entity.y == players[active_player].y:
+					entities = game_map.next_floor(players, message_log, constants)
 					fov_map = initialize_fov(game_map)
 					fov_recompute = True
 					libtcod.console_clear(con)
@@ -213,12 +226,12 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
 		# Level up
 		if level_up:
 			if level_up == 'hp':
-				player.fighter.base_max_hp  += 20
-				player.fighter.hp += 20
+				players[active_player].fighter.base_max_hp  += 20
+				players[active_player].fighter.hp += 20
 			elif level_up == 'str':
-				player.fighter.base_power += 1
+				players[active_player].fighter.base_power += 1
 			elif level_up == 'def':
-				player.fighter.base_defense += 1
+				players[active_player].fighter.base_defense += 1
 
 			game_state = previous_game_state
 
@@ -232,7 +245,7 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
 			if left_click:
 				target_x, target_y = left_click
 
-				item_use_results = player.inventory.use(targeting_item, entities=entities, fov_map=fov_map,
+				item_use_results = players[active_player].inventory.use(targeting_item, entities=entities, fov_map=fov_map,
 														target_x=target_x, target_y=target_y)
 				player_turn_results.extend(item_use_results)
 			elif right_click:
@@ -245,7 +258,7 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
 			elif game_state == GameStates.TARGETING:
 				player_turn_results.append({'targeting_cancelled': True})
 			else:
-				save_game(player, entities, game_map, message_log, game_state)
+				save_game(players, entities, game_map, message_log, game_state)
 
 				return True
 
@@ -269,7 +282,7 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
 				message_log.add_message(message)
 
 			if dead_entity:
-				if dead_entity == player:
+				if dead_entity == players[active_player]:
 					message, game_state = kill_player(dead_entity)
 				else:
 					message = kill_monster(dead_entity)
@@ -279,18 +292,36 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
 			if item_added:
 				entities.remove(item_added)
 
-				game_state = GameStates.ENEMY_TURN
+				# Change active player
+				players[active_player].color = libtcod.blue
+				players[(active_player+1)%constants['player_count']].color = libtcod.white
+				active_player += 1
+				if active_player >= constants['player_count']:
+					active_player = 0
+					game_state = GameStates.ENEMY_TURN
 
 			if item_consumed:
-				game_state = GameStates.ENEMY_TURN
+				# Change active player
+				players[active_player].color = libtcod.blue
+				players[(active_player+1)%constants['player_count']].color = libtcod.white
+				active_player += 1
+				if active_player >= constants['player_count']:
+					active_player = 0
+					game_state = GameStates.ENEMY_TURN
 
 			if item_dropped:
 				entities.append(item_dropped)
 				
-				game_state = GameStates.ENEMY_TURN
+				# Change active player
+				players[active_player].color = libtcod.blue
+				players[(active_player+1)%constants['player_count']].color = libtcod.white
+				active_player += 1
+				if active_player >= constants['player_count']:
+					active_player = 0
+					game_state = GameStates.ENEMY_TURN
 
 			if equip:
-				equip_results = player.equipment.toggle_equip(equip)
+				equip_results = players[active_player].equipment.toggle_equip(equip)
 
 				for equip_result in equip_results:
 					equipped = equip_result.get('equipped')
@@ -302,7 +333,13 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
 					if dequipped:
 						message_log.add_message(Message('You dequipped the {0}'.format(dequipped.name)))
 
-				game_state = GameStates.ENEMY_TURN
+				# Change active player
+				players[active_player].color = libtcod.blue
+				players[(active_player+1)%constants['player_count']].color = libtcod.white
+				active_player += 1
+				if active_player >= constants['player_count']:
+					active_player = 0
+					game_state = GameStates.ENEMY_TURN
 
 			if targeting:
 				previous_game_state = GameStates.PLAYERS_TURN
@@ -318,13 +355,13 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
 				message_log.add_message(Message('Targeting cancelled'))
 
 			if xp:
-				leveled_up = player.level.add_xp(xp)
+				leveled_up = players[active_player].level.add_xp(xp)
 				message_log.add_message(Message('You gain {0} experience point.'.format(xp)))
 
 				if leveled_up:
 					message_log.add_message(Message(
 						'Your battle skills grow stronger! You reached level {0}'.format(
-							player.level.current_level) + '!', libtcod.yellow))
+							players[active_player].level.current_level) + '!', libtcod.yellow))
 					previous_game_state = game_state
 					game_state = GameStates.LEVEL_UP
 
@@ -332,7 +369,7 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
 		if game_state == GameStates.ENEMY_TURN:
 			for entity in entities:
 				if entity.ai:
-					enemy_turn_results = entity.ai.take_turn(player, fov_map, game_map, entities)
+					enemy_turn_results = entity.ai.take_turn(players, fov_map, game_map, entities)
 
 					for enemy_turn_result in enemy_turn_results:
 						message = enemy_turn_result.get('message')
@@ -342,7 +379,7 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
 							message_log.add_message(message)
 
 						if dead_entity:
-							if dead_entity == player:
+							if dead_entity in players:
 								message, game_state = kill_player(dead_entity)
 							else:
 								message = kill_monster(dead_entity)

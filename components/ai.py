@@ -5,10 +5,17 @@ from random import randint
 from game_messages import Message
 
 class BasicMonster:
-	def take_turn(self, target, fov_map, game_map, entities):
+	def take_turn(self, players, fov_map, game_map, entities):
 		results = []
 
 		monster = self.owner
+
+		# Find closest player
+		target = players[0]
+		for player in players:
+			if monster.distance_to(player) < monster.distance_to(target):
+				target = player
+				
 		# Only monsters in sight get to move
 		if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
 

@@ -4,28 +4,28 @@ import shelve
 
 
 
-def save_game(player, entities, game_map, message_log, game_state):
+def save_game(players, entities, game_map, message_log, game_state):
 	with shelve.open('savegame', 'n') as data_file:
-		data_file['player_index'] = entities.index(player)
+		for i in range(len(players)):
+			data_file['player{0}_index'.format(i)] = entities.index(players[i])
 		data_file['entities'] = entities
 		data_file['game_map'] = game_map
 		data_file['message_log'] = message_log
 		data_file['game_state'] = game_state
 
-def load_game():
+def load_game(player_count):
 	if not os.path.exists('savegame.dat'):
 		raise FileNotFoundError
 
+	players = []
 
 	with shelve.open('savegame', 'r') as data_file:
-		player_index = data_file['player_index']
 		entities = data_file['entities']
+		for i in range(player_count):
+			player_index = data_file['player{0}_index'.format(i)]
+			players.append(entities[player_index])
 		game_map = data_file['game_map']
 		message_log = data_file['message_log']
 		game_state = data_file['game_state']
 
-	player = entities[player_index]
-
-	print('Game loaded')
-
-	return player, entities, game_map, message_log, game_state
+	return players, entities, game_map, message_log, game_state

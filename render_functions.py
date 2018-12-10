@@ -36,7 +36,7 @@ def render_bar(panel, x, y, total_width, name, value, maximum, bar_color, back_c
 	libtcod.console_print_ex(panel, int(x + total_width / 2), y, libtcod.BKGND_NONE, libtcod.CENTER,
 								'{0}: {1}/{2}'.format(name, value, maximum))
 
-def render_all(con, panel, entities, player, game_map, fov_map, fov_recompute, message_log, screen_width, screen_height, bar_width,
+def render_all(con, panel, entities, players, active_player, game_map, fov_map, fov_recompute, message_log, screen_width, screen_height, bar_width,
 					panel_height, panel_y, mouse, colors, game_state):
 	if fov_recompute:
 		# Draw all the tiles in the game map
@@ -82,9 +82,13 @@ def render_all(con, panel, entities, player, game_map, fov_map, fov_recompute, m
 		y +=1
 
 	# Render HP and dungeon level
-	render_bar(panel, 1, 1, bar_width, 'HP', player.fighter.hp, player.fighter.max_hp,
+	render_bar(panel, 1, 1, bar_width, 'HP', players[0].fighter.hp, players[0].fighter.max_hp,
 				libtcod.red, libtcod.darker_red)
-	libtcod.console_print_ex(panel, 1, 3, libtcod.BKGND_NONE, libtcod.LEFT,
+	render_bar(panel, 1, 2, bar_width, 'HP', players[1].fighter.hp, players[1].fighter.max_hp,
+				libtcod.red, libtcod.darker_red)
+	render_bar(panel, 1, 3, bar_width, 'HP', players[2].fighter.hp, players[2].fighter.max_hp,
+				libtcod.red, libtcod.darker_red)
+	libtcod.console_print_ex(panel, 1, 4, libtcod.BKGND_NONE, libtcod.LEFT,
 							'Dungeon level: {0}'.format(game_map.dungeon_level))
 
 	libtcod.console_set_default_foreground(panel, libtcod.light_gray)
@@ -99,13 +103,13 @@ def render_all(con, panel, entities, player, game_map, fov_map, fov_recompute, m
 		else:
 			inventory_title = 'Press the key next to an item to drop it, or Esc to cancel.\n'
 		
-		inventory_menu(con, inventory_title, player, 50, screen_width, screen_height)
+		inventory_menu(con, inventory_title, players[active_player], 50, screen_width, screen_height)
 
 	elif game_state == GameStates.LEVEL_UP:
-		level_up_menu(con, 'Level up! Choose a stat to raise:', player, 40, screen_width, screen_height)
+		level_up_menu(con, 'Level up! Choose a stat to raise:', players[active_player], 40, screen_width, screen_height)
 
 	elif game_state == GameStates.CHARACTER_SCREEN:
-		character_screen(player, 30, 10, screen_width, screen_height)
+		character_screen(players[active_player], 30, 10, screen_width, screen_height)
 
 def clear_all(con, entities):
 	for entity in entities:
