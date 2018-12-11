@@ -86,7 +86,9 @@ def play_game(players, entities, game_map, message_log, game_state, con, panel, 
 	# Flags if we need to update FOV
 	fov_recompute = True
 
-	fov_map = initialize_fov(game_map)
+	for player in players:
+		player.vision.fov_map = initialize_fov(game_map)
+	
 
 	# Holds keyboard and mouse input
 	key = libtcod.Key()
@@ -98,6 +100,7 @@ def play_game(players, entities, game_map, message_log, game_state, con, panel, 
 	targeting_item = None
 
 	active_player = 0
+	previous_player = 0
 	players[active_player].color = libtcod.white
 
 	# Game loop
@@ -107,10 +110,11 @@ def play_game(players, entities, game_map, message_log, game_state, con, panel, 
 
 		# Update fov if needed
 		if fov_recompute:
-			recompute_fov(fov_map, players[active_player].x, players[active_player].y, constants['fov_radius'], constants['fov_light_walls'], constants['fov_algorithm'])
+			for player in players:
+				recompute_fov(player.vision.fov_map, player.x, player.y, constants['fov_radius'], constants['fov_light_walls'], constants['fov_algorithm'])
 
 		# Render all entities
-		render_all(con, panel, entities, players, active_player, game_map, fov_map, fov_recompute, message_log, constants['screen_width'], constants['screen_height'],
+		render_all(con, panel, entities, players, active_player, game_map, fov_recompute, message_log, constants['screen_width'], constants['screen_height'],
 					constants['bar_width'], constants['panel_height'], constants['panel_y'], mouse, constants['colors'], game_state)
 
 		fov_recompute = False
@@ -166,6 +170,7 @@ def play_game(players, entities, game_map, message_log, game_state, con, panel, 
 				# Change active player
 				players[active_player].color = libtcod.blue
 				players[(active_player+1)%constants['player_count']].color = libtcod.white
+				previous_player = active_player
 				active_player += 1
 				if active_player >= constants['player_count']:
 					active_player = 0
@@ -175,6 +180,7 @@ def play_game(players, entities, game_map, message_log, game_state, con, panel, 
 			# Change active player
 			players[active_player].color = libtcod.blue
 			players[(active_player+1)%constants['player_count']].color = libtcod.white
+			previous_player = active_player
 			active_player += 1
 			if active_player >= constants['player_count']:
 				active_player = 0
@@ -215,7 +221,8 @@ def play_game(players, entities, game_map, message_log, game_state, con, panel, 
 			for entity in entities:
 				if entity.stairs and entity.x == players[active_player].x and entity.y == players[active_player].y:
 					entities = game_map.next_floor(players, message_log, constants)
-					fov_map = initialize_fov(game_map)
+					for player in players:
+						player.vision.fov_map = initialize_fov(game_map)
 					fov_recompute = True
 					libtcod.console_clear(con)
 
@@ -336,6 +343,7 @@ def play_game(players, entities, game_map, message_log, game_state, con, panel, 
 				# Change active player
 				players[active_player].color = libtcod.blue
 				players[(active_player+1)%constants['player_count']].color = libtcod.white
+				previous_player = active_player
 				active_player += 1
 				if active_player >= constants['player_count']:
 					active_player = 0
@@ -369,7 +377,7 @@ def play_game(players, entities, game_map, message_log, game_state, con, panel, 
 		if game_state == GameStates.ENEMY_TURN:
 			for entity in entities:
 				if entity.ai:
-					enemy_turn_results = entity.ai.take_turn(players, fov_map, game_map, entities)
+					enemy_turn_results = entity.ai.take_turn(players, game_map, entities)
 
 					for enemy_turn_result in enemy_turn_results:
 						message = enemy_turn_result.get('message')

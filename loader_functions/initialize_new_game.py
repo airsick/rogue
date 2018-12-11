@@ -5,6 +5,7 @@ from components.equippable import Equippable
 from components.fighter import Fighter
 from components.inventory import Inventory
 from components.level import Level
+from components.vision import Vision
 
 from entity import Entity
 
@@ -95,9 +96,10 @@ def get_game_variables(constants):
 		inventory_component = Inventory(26)
 		level_component = Level()
 		equipment_component = Equipment()
-		players.append(Entity(0, 0, '@', libtcod.blue, 'Player', blocks = True, render_order = RenderOrder.ACTOR,
+		vision_component = Vision(None, constants['fov_radius'])
+		players.append(Entity(0, 0, '@', libtcod.blue, 'Player{0}'.format(i+1), blocks = True, render_order = RenderOrder.ACTOR,
 						fighter = fighter_component, inventory=inventory_component, level=level_component,
-						equipment=equipment_component))
+						equipment=equipment_component, vision=vision_component))
 		
 
 		# Give the player a dagger to start with

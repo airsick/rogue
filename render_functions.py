@@ -36,13 +36,15 @@ def render_bar(panel, x, y, total_width, name, value, maximum, bar_color, back_c
 	libtcod.console_print_ex(panel, int(x + total_width / 2), y, libtcod.BKGND_NONE, libtcod.CENTER,
 								'{0}: {1}/{2}'.format(name, value, maximum))
 
-def render_all(con, panel, entities, players, active_player, game_map, fov_map, fov_recompute, message_log, screen_width, screen_height, bar_width,
+def render_all(con, panel, entities, players, active_player, game_map, fov_recompute, message_log, screen_width, screen_height, bar_width,
 					panel_height, panel_y, mouse, colors, game_state):
 	if fov_recompute:
 		# Draw all the tiles in the game map
 		for y in range(game_map.height):
 			for x in range(game_map.width):
-				visible = libtcod.map_is_in_fov(fov_map, x, y)
+				visible = libtcod.map_is_in_fov(players[0].vision.fov_map, x, y)
+				for player in players:
+					visible |= libtcod.map_is_in_fov(player.vision.fov_map, x, y)
 				wall = game_map.tiles[x][y].block_sight
 
 				# Use light colors if the tile is visible
@@ -65,7 +67,8 @@ def render_all(con, panel, entities, players, active_player, game_map, fov_map, 
 	entities_in_render_order = sorted(entities, key=lambda x: x.render_order.value)
 
 	for entity in entities_in_render_order:
-		draw_entity(con, entity, fov_map, game_map)
+		for player in players:
+			draw_entity(con, entity, player.vision.fov_map, game_map)
 
 	
 	libtcod.console_blit(con, 0, 0, screen_width, screen_height, 0, 0, 0)
@@ -82,18 +85,15 @@ def render_all(con, panel, entities, players, active_player, game_map, fov_map, 
 		y +=1
 
 	# Render HP and dungeon level
-	render_bar(panel, 1, 1, bar_width, 'HP', players[0].fighter.hp, players[0].fighter.max_hp,
+	for i in range(len(players)):
+		render_bar(panel, 1, i+2, bar_width, 'HP', players[i].fighter.hp, players[i].fighter.max_hp,
 				libtcod.red, libtcod.darker_red)
-	render_bar(panel, 1, 2, bar_width, 'HP', players[1].fighter.hp, players[1].fighter.max_hp,
-				libtcod.red, libtcod.darker_red)
-	render_bar(panel, 1, 3, bar_width, 'HP', players[2].fighter.hp, players[2].fighter.max_hp,
-				libtcod.red, libtcod.darker_red)
-	libtcod.console_print_ex(panel, 1, 4, libtcod.BKGND_NONE, libtcod.LEFT,
+	libtcod.console_print_ex(panel, 1, 1, libtcod.BKGND_NONE, libtcod.LEFT,
 							'Dungeon level: {0}'.format(game_map.dungeon_level))
 
 	libtcod.console_set_default_foreground(panel, libtcod.light_gray)
 	libtcod.console_print_ex(panel, 1, 0, libtcod.BKGND_NONE, libtcod.LEFT,
-							get_names_under_mouse(mouse, entities, fov_map))
+							get_names_under_mouse(mouse, entities, players[0].vision.fov_map))
 
 	libtcod.console_blit(panel, 0, 0, screen_width, panel_height, 0, 0, panel_y)
 

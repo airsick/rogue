@@ -5,7 +5,7 @@ from random import randint
 from game_messages import Message
 
 class BasicMonster:
-	def take_turn(self, players, fov_map, game_map, entities):
+	def take_turn(self, players, game_map, entities):
 		results = []
 
 		monster = self.owner
@@ -17,7 +17,10 @@ class BasicMonster:
 				target = player
 				
 		# Only monsters in sight get to move
-		if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
+		visible = libtcod.map_is_in_fov(players[0].vision.fov_map, monster.x, monster.y)
+		for player in players:
+			visible |= libtcod.map_is_in_fov(player.vision.fov_map, monster.x, monster.y)
+		if visible:
 
 			if monster.distance_to(target) >= 2:
 				monster.move_astar(target, entities, game_map)
