@@ -2,6 +2,7 @@ import libtcodpy as libtcod
 
 from death_functions import kill_monster, kill_player
 from entity import get_blocking_entities_at_location
+from components.fighter import FighterStates
 from fov_functions import initialize_fov, recompute_fov
 from game_messages import Message
 from game_states import GameStates
@@ -16,7 +17,7 @@ def main():
 	constants = get_constants()
 
 	# Set font
-	libtcod.console_set_custom_font('arial10x10.png', libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
+	libtcod.console_set_custom_font('dejavu_wide16x16_gs_tc.png', libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
 	# Create game window
 	libtcod.console_init_root(constants['screen_width'], constants['screen_height'], constants['window_title'], False)
 
@@ -88,7 +89,7 @@ def play_game(players, entities, game_map, message_log, game_state, con, panel, 
 
 	for player in players:
 		player.vision.fov_map = initialize_fov(game_map)
-	
+
 
 	# Holds keyboard and mouse input
 	key = libtcod.Key()
@@ -137,6 +138,7 @@ def play_game(players, entities, game_map, message_log, game_state, con, panel, 
 		drop_inventory = action.get('drop_inventory')
 		inventory_index = action.get('inventory_index')
 		take_stairs = action.get('take_stairs')
+		cancel_follow = action.get('cancel_follow')
 		level_up = action.get('level_up')
 		exit = action.get('exit')
 		show_character_screen = action.get('show_character_screen')
@@ -158,33 +160,36 @@ def play_game(players, entities, game_map, message_log, game_state, con, panel, 
 
 			if not game_map.is_blocked(destination_x, destination_y):
 				target = get_blocking_entities_at_location(entities, destination_x, destination_y)
+
 				# If the way is blocked by a baddie
 				if target:
-					attack_results = players[active_player].fighter.attack(target)
-					player_turn_results.extend(attack_results)
+					# Don't attack other players
+					if target in players:
+						# follow the player you're bumping into
+						# Only follow if it would not make it so every player is following something
+						# (That would be bad)
+						if sum(player.fighter.state == FighterStates.FOLLOWING for player in players) < len(players) - 1:
+							players[active_player].fighter.follow(target)
+						else:
+							# If it would do that, just ignore the input
+							continue
+					# Do attack enemies
+					else:
+						attack_results = players[active_player].fighter.attack(target)
+						player_turn_results.extend(attack_results)# 
 				else:
 					players[active_player].move(dx, dy)
 
 					fov_recompute = True
 
 				# Change active player
-				players[active_player].color = libtcod.blue
-				players[(active_player+1)%constants['player_count']].color = libtcod.white
-				previous_player = active_player
-				active_player += 1
-				if active_player >= constants['player_count']:
-					active_player = 0
-					game_state = GameStates.ENEMY_TURN
+				active_player, previous_player, game_state = next_player(players, active_player, previous_player, game_state, constants)
+
 
 		if wait:
 			# Change active player
-			players[active_player].color = libtcod.blue
-			players[(active_player+1)%constants['player_count']].color = libtcod.white
-			previous_player = active_player
-			active_player += 1
-			if active_player >= constants['player_count']:
-				active_player = 0
-				game_state = GameStates.ENEMY_TURN
+			active_player, previous_player, game_state = next_player(players, active_player, previous_player, game_state, constants)
+
 
 		# Picking up an item
 		elif pickup and game_state == GameStates.PLAYERS_TURN:
@@ -212,7 +217,7 @@ def play_game(players, entities, game_map, message_log, game_state, con, panel, 
 			item = players[active_player].inventory.items[inventory_index]
 			
 			if game_state == GameStates.SHOW_INVENTORY:
-				player_turn_results.extend(players[active_player].inventory.use(item, entities=entities, fov_map=fov_map))
+				player_turn_results.extend(players[active_player].inventory.use(item, entities=entities, fov_map=players[active_player].vision.fov_map))
 			elif game_state == GameStates.DROP_INVENTORY:
 				player_turn_results.extend(players[active_player].inventory.drop_item(item))
 
@@ -229,6 +234,11 @@ def play_game(players, entities, game_map, message_log, game_state, con, panel, 
 					break
 			else:
 				message_log.add_message(Message('There are no stairs here.', libtcod.yellow))
+
+		# Cancel follow
+		if cancel_follow:
+			for player in players:
+				player.fighter.stop_following()
 
 		# Level up
 		if level_up:
@@ -300,32 +310,17 @@ def play_game(players, entities, game_map, message_log, game_state, con, panel, 
 				entities.remove(item_added)
 
 				# Change active player
-				players[active_player].color = libtcod.blue
-				players[(active_player+1)%constants['player_count']].color = libtcod.white
-				active_player += 1
-				if active_player >= constants['player_count']:
-					active_player = 0
-					game_state = GameStates.ENEMY_TURN
+				active_player, previous_player, game_state = next_player(players, active_player, previous_player, game_state, constants)
 
 			if item_consumed:
 				# Change active player
-				players[active_player].color = libtcod.blue
-				players[(active_player+1)%constants['player_count']].color = libtcod.white
-				active_player += 1
-				if active_player >= constants['player_count']:
-					active_player = 0
-					game_state = GameStates.ENEMY_TURN
+				active_player, previous_player, game_state = next_player(players, active_player, previous_player, game_state, constants)
 
 			if item_dropped:
 				entities.append(item_dropped)
 				
 				# Change active player
-				players[active_player].color = libtcod.blue
-				players[(active_player+1)%constants['player_count']].color = libtcod.white
-				active_player += 1
-				if active_player >= constants['player_count']:
-					active_player = 0
-					game_state = GameStates.ENEMY_TURN
+				active_player, previous_player, game_state = next_player(players, active_player, previous_player, game_state, constants)
 
 			if equip:
 				equip_results = players[active_player].equipment.toggle_equip(equip)
@@ -341,13 +336,7 @@ def play_game(players, entities, game_map, message_log, game_state, con, panel, 
 						message_log.add_message(Message('You dequipped the {0}'.format(dequipped.name)))
 
 				# Change active player
-				players[active_player].color = libtcod.blue
-				players[(active_player+1)%constants['player_count']].color = libtcod.white
-				previous_player = active_player
-				active_player += 1
-				if active_player >= constants['player_count']:
-					active_player = 0
-					game_state = GameStates.ENEMY_TURN
+				active_player, previous_player, game_state = next_player(players, active_player, previous_player, game_state, constants)
 
 			if targeting:
 				previous_game_state = GameStates.PLAYERS_TURN
@@ -372,6 +361,23 @@ def play_game(players, entities, game_map, message_log, game_state, con, panel, 
 							players[active_player].level.current_level) + '!', libtcod.yellow))
 					previous_game_state = game_state
 					game_state = GameStates.LEVEL_UP
+
+		# Following
+		if players[active_player].fighter.state == FighterStates.FOLLOWING:
+			target = players[active_player].fighter.target
+			# Don't move into their space
+			if players[active_player].distance_to(target) >= 2:
+				players[active_player].move_astar(target, entities, game_map)
+				fov_recompute = True
+			# Change active player
+			active_player, previous_player, game_state = next_player(players, active_player, previous_player, game_state, constants)
+			'''players[active_player].color = libtcod.blue
+			players[(active_player+1)%constants['player_count']].color = libtcod.white
+			previous_player = active_player
+			active_player += 1
+			if active_player >= constants['player_count']:
+				active_player = 0
+				game_state = GameStates.ENEMY_TURN'''
 
 		# Enemy Movement
 		if game_state == GameStates.ENEMY_TURN:
@@ -401,6 +407,16 @@ def play_game(players, entities, game_map, message_log, game_state, con, panel, 
 						break
 			else:
 				game_state = GameStates.PLAYERS_TURN
+
+def next_player(players, active_player, previous_player, game_state, constants):
+	players[active_player].color = libtcod.blue
+	players[(active_player+1)%constants['player_count']].color = libtcod.white
+	previous_player = active_player
+	active_player += 1
+	if active_player >= constants['player_count']:
+		active_player = 0
+		game_state = GameStates.ENEMY_TURN
+	return active_player, previous_player, game_state
 
 
 if __name__ == '__main__':

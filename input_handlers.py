@@ -56,11 +56,14 @@ def handle_player_turn_keys(key):
 	elif key_char == 'd':
 		return {'drop_inventory': True}
 	# Go down stairs
-	elif key_char == '>' or key.vk == libtcod.KEY_ENTER:
+	elif key_char == '.' and libtcod.console_is_key_pressed(libtcod.KEY_SHIFT) or key.vk == libtcod.KEY_ENTER:
 		return {'take_stairs': True}
 	# Character screen
-	elif key_char == 'c':
+	elif key_char == 'c' and libtcod.console_is_key_pressed(libtcod.KEY_SHIFT):
 		return {'show_character_screen': True}
+	# Cancel auto-movement
+	elif key_char == 'c':
+		return {'cancel_follow': True}
 
 	# Alt Enter toggles full screen
 	if key.vk == libtcod.KEY_ENTER and key.lalt:

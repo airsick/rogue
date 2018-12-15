@@ -86,8 +86,10 @@ def render_all(con, panel, entities, players, active_player, game_map, fov_recom
 
 	# Render HP and dungeon level
 	for i in range(len(players)):
-		render_bar(panel, 1, i+2, bar_width, 'HP', players[i].fighter.hp, players[i].fighter.max_hp,
+		render_bar(panel, 2, i+2, bar_width-1, 'HP', players[i].fighter.hp, players[i].fighter.max_hp,
 				libtcod.red, libtcod.darker_red)
+	# Print > next to active player
+	libtcod.console_print_ex(panel, 1, active_player + 2, libtcod.BKGND_NONE, libtcod.LEFT, '>')
 	libtcod.console_print_ex(panel, 1, 1, libtcod.BKGND_NONE, libtcod.LEFT,
 							'Dungeon level: {0}'.format(game_map.dungeon_level))
 

@@ -1,6 +1,12 @@
 import libtcodpy as libtcod
 
+from enum import Enum
+
 from game_messages import Message
+
+class FighterStates(Enum):
+	ACTIVE = 1
+	FOLLOWING = 2
 
 class Fighter:
 	def __init__(self, hp, defense, power, xp=0):
@@ -9,6 +15,7 @@ class Fighter:
 		self.base_defense = defense
 		self.base_power = power
 		self.xp = xp
+		self.state = FighterStates.ACTIVE
 
 	@property
 	def max_hp(self):
@@ -67,3 +74,11 @@ class Fighter:
 
 		if self.hp > self.max_hp:
 			self.hp = self.max_hp
+
+	def follow(self, target):
+		self.state = FighterStates.FOLLOWING
+		self.target = target
+
+	def stop_following(self):
+		self.state = FighterStates.ACTIVE
+		self.target = None

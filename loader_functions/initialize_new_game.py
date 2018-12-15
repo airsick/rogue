@@ -92,7 +92,7 @@ def get_game_variables(constants):
 
 	for i in range(constants['player_count']):
 		# Building the players
-		fighter_component = Fighter(hp=100, defense=1, power=2)
+		fighter_component = Fighter(hp=30, defense=1, power=2)
 		inventory_component = Inventory(26)
 		level_component = Level()
 		equipment_component = Equipment()

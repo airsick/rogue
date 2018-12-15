@@ -199,19 +199,19 @@ class GameMap:
 					item = Entity(x, y, '[', libtcod.darker_orange, 'Shield', render_order=RenderOrder.ITEM,
 									equippable=equippable_component)
 				# Lightning scroll
-				elif item_choice == 'lightning_scroll':
+				if item_choice == 'lightning_scroll':
 					item_component = Item(use_function=cast_lightning, damage=40, maximum_range=5)
 					item = Entity(x, y, '#', libtcod.yellow, 'Lightning Scroll', render_order=RenderOrder.ITEM,
 									item=item_component)
 				# Fireball scroll
-				elif item_choice == 'fireball_scroll':
+				if item_choice == 'fireball_scroll':
 					item_component = Item(use_function=cast_fireball, targeting=True, targeting_message=Message(
 										'Left-click a target tile for the fireball, or right-click to cancel.', libtcod.light_cyan),
 										damage=25, radius=3)
 					item = Entity(x, y, '#', libtcod.red, 'Fireball Scroll', render_order=RenderOrder.ITEM,
 									item=item_component)
 				# Confusion scroll
-				else:
+				if item_choice == 'confusion_scroll':
 					item_component = Item(use_function=cast_confuse, targeting=True, targeting_message=Message(
 										'Left-click aan enemy to confuse it, or right-click to cancel.', libtcod.light_cyan),)
 					item = Entity(x, y, '#', libtcod.light_pink, 'Confusion Scroll', render_order=RenderOrder.ITEM,
