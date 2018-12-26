@@ -36,7 +36,7 @@ class ConfusedMonster:
 		self.previous_ai = previous_ai
 		self.number_of_turns = number_of_turns
 
-	def take_turn(self, target, fov_map, game_map, entities):
+	def take_turn(self, players, game_map, entities):
 		results = []
 
 		if self.number_of_turns > 0:

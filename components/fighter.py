@@ -75,9 +75,6 @@ class Fighter:
 		if self.hp > self.max_hp:
 			self.hp = self.max_hp
 
-	def follow(self, target):
-		self.state = FighterStates.FOLLOWING
-		self.target = target
 
 	def stop_following(self):
 		self.state = FighterStates.ACTIVE

@@ -20,7 +20,7 @@ from map_objects.game_map import GameMap
 from render_functions import RenderOrder
 
 def get_constants():
-	window_title = 'Roguelike Bitches'
+	window_title = 'We Be Goblins'
 
 	# Screen size
 	screen_width = 80
@@ -111,7 +111,7 @@ def get_game_variables(constants):
 		entities.append(players[-1])
 	# Create the game map
 	game_map = GameMap(constants['map_width'], constants['map_height'])
-	game_map.make_map(constants['max_rooms'], constants['room_min_size'], constants['room_max_size'], constants['map_width'], constants['map_height'], players, entities)
+	game_map.make_map(game_map, constants['max_rooms'], constants['room_min_size'], constants['room_max_size'], constants['map_width'], constants['map_height'], players, entities)
 
 	# Message log
 	message_log = MessageLog(constants['message_x'], constants['message_width'], constants['message_height'])

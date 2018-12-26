@@ -25,6 +25,25 @@ def handle_player_turn_keys(key):
 	# Movement keys
 	key_char = chr(key.c)
 
+	# Repeated movement
+	if libtcod.console_is_key_pressed(libtcod.KEY_SHIFT) and (key.vk == libtcod.KEY_UP or key.vk == libtcod.KEY_KP8 or key_char == 'k'):
+		return {'move': (0,-1), 'repeat':-1}
+	elif libtcod.console_is_key_pressed(libtcod.KEY_SHIFT) and (key.vk == libtcod.KEY_DOWN or key.vk == libtcod.KEY_KP2 or key_char == 'j'):
+		return {'move': (0, 1), 'repeat':-1}
+	elif libtcod.console_is_key_pressed(libtcod.KEY_SHIFT) and (key.vk == libtcod.KEY_LEFT or key.vk == libtcod.KEY_KP4 or key_char == 'h'):
+		return {'move': (-1,0), 'repeat':-1}
+	elif libtcod.console_is_key_pressed(libtcod.KEY_SHIFT) and (key.vk == libtcod.KEY_RIGHT or key.vk == libtcod.KEY_KP6 or key_char == 'l'):
+		return {'move': ( 1,0), 'repeat':-1}
+	elif libtcod.console_is_key_pressed(libtcod.KEY_SHIFT) and (key.vk == libtcod.KEY_KP7 or key_char == 'y'):
+		return {'move': (-1,-1), 'repeat':-1}
+	elif libtcod.console_is_key_pressed(libtcod.KEY_SHIFT) and (key.vk == libtcod.KEY_KP9 or key_char == 'u'):
+		return {'move': ( 1,-1), 'repeat':-1}
+	elif libtcod.console_is_key_pressed(libtcod.KEY_SHIFT) and (key.vk == libtcod.KEY_KP1 or key_char == 'b'):
+		return {'move': (-1, 1), 'repeat':-1}
+	elif libtcod.console_is_key_pressed(libtcod.KEY_SHIFT) and (key.vk == libtcod.KEY_KP3 or key_char == 'n'):
+		return {'move': ( 1, 1), 'repeat':-1}
+
+	# One time movement
 	if key.vk == libtcod.KEY_UP or key.vk == libtcod.KEY_KP8 or key_char == 'k':
 		return {'move': (0,-1)}
 	elif key.vk == libtcod.KEY_DOWN or key.vk == libtcod.KEY_KP2 or key_char == 'j':
@@ -42,8 +61,13 @@ def handle_player_turn_keys(key):
 		return {'move': (-1, 1)}
 	elif key.vk == libtcod.KEY_KP3 or key_char == 'n':
 		return {'move': ( 1, 1)}
+	# Stand still with repeat
+	# This keycode hack is real dumb
+	elif key.shift and key.vk == 65 and key.c == 0:
+	#or key_char == '.':
+		return {'wait': True, 'repeat':-1}
 	# Stand still
-	elif key.vk == libtcod.KEY_KP5 :
+	elif key.vk == 65 and key.c == 0: # (KP5)
 	#or key_char == '.':
 		return {'wait': True}
 	# Pick up

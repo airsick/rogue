@@ -12,7 +12,7 @@ class Entity:
 	A generic object to represent players, enemies, items, etc.
 	"""
 	def __init__(self, x, y, char, color, name, blocks = False, render_order=RenderOrder.CORPSE, fighter=None, ai=None,
-				item=None, inventory=None, stairs=None, level=None, equipment=None, equippable=None, vision=None):
+				item=None, inventory=None, stairs=None, level=None, equipment=None, equippable=None, vision=None, command=None):
 		self.x = x
 		self.y = y
 		self.char = char
@@ -29,6 +29,7 @@ class Entity:
 		self.equipment = equipment
 		self.equippable = equippable
 		self.vision = vision
+		self.command = command
 
 		if self.fighter:
 			self.fighter.owner = self
@@ -62,11 +63,19 @@ class Entity:
 		if self.vision:
 			self.vision.owner = self
 
+		if self.command:
+			self.command.owner = self
+
+	def set_command(self, command):
+		self.command = command
+		self.command.owner = self
+
 	# Move the entity by a given amount
 	def move(self, dx, dy):
 		self.x += dx
 		self.y += dy
 
+	# Returns true if the entity successfully moved
 	def move_towards(self, target_x, target_y, game_map, entities):
 		dx = target_x - self.x
 		dy = target_y - self.y
@@ -78,6 +87,8 @@ class Entity:
 		if not (game_map.is_blocked(self.x + dx, self.y + dy) or
 					get_blocking_entities_at_location(entities, self.x + dx, self.y + dy)):
 			self.move(dx, dy)
+			return True
+		return False
 
 	def move_astar(self, target, entities, game_map):
 		# Create a FOV map that has the dimensions of the map
