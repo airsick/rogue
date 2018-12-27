@@ -34,7 +34,7 @@ class GameMap:
 
 	def initialize_tiles(self):
 		# Make a big ol' pile of floor tiles
-		tiles = [[Tile(True) for y in range(self.height)] for x in range(self.width)]
+		tiles = [[Tile(True, "Wall", libtcod.Color(130, 110, 50), libtcod.Color(0,0,100), char='#') for y in range(self.height)] for x in range(self.width)]
 
 		return tiles
 
@@ -44,18 +44,15 @@ class GameMap:
 		# Go through the tiles in the rectangle and make them passable
 		for x in range(room.x1 + 1, room.x2):
 			for y in range(room.y1 + 1, room.y2):
-				self.tiles[x][y].blocked = False
-				self.tiles[x][y].block_sight = False
+				self.tiles[x][y] = Tile(False, "Floor", libtcod.Color(0,128,0), libtcod.Color(32, 32, 125), char='.')
 
 	def create_h_tunnel(self, x1, x2, y):
 		for x in range(min(x1, x2), max(x1, x2) + 1):
-			self.tiles[x][y].blocked = False
-			self.tiles[x][y].block_sight = False
+			self.tiles[x][y] = Tile(False, "Floor", libtcod.Color(200, 180, 50), libtcod.Color(50, 50, 150), char='.')
 
 	def create_v_tunnel(self, y1, y2, x):
 		for y in range(min(y1, y2), max(y1, y2) + 1):
-			self.tiles[x][y].blocked = False
-			self.tiles[x][y].block_sight = False
+			self.tiles[x][y] = Tile(False, "Floor", libtcod.Color(200, 180, 50), libtcod.Color(50, 50, 150), char='.')
 
 	def place_entities(self, room, entities):
 		max_monsters_per_room = from_dungeon_level([[2, 1], [3, 4], [5, 6]], self.dungeon_level)
@@ -92,7 +89,7 @@ class GameMap:
 					fighter_component = Fighter(hp=5, defense=0, power=3, xp=20)
 					ai_component = BasicMonster()
 
-					monster = Entity(x, y, 'r', libtcod.desaturated_green, 'Rat', blocks = True, 
+					monster = Entity(x, y, 'r', libtcod.lighter_sepia, 'Rat', blocks = True, 
 									render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
 				
 				elif monster_choice == 'orc':

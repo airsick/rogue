@@ -176,11 +176,11 @@ class Game:
 
 			fov_recompute = False
 
-			# Clear console for next frame
+			# Push frame update
 			libtcod.console_flush()
 
 			# Clear old entity positions
-			clear_all(con, entities)
+			clear_all(con, entities, game_map)
 
 			# Determine action
 			action = handle_keys(key, self.game_state)
@@ -385,7 +385,7 @@ class Game:
 					message_log.add_message(message)
 
 				if dead_entity:
-					if dead_entity == players[self.active_player]:
+					if dead_entity in players:
 						message, self.game_state = kill_player(dead_entity)
 					else:
 						message = kill_monster(dead_entity)

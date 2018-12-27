@@ -13,12 +13,16 @@ class RenderOrder(Enum):
 	ITEM = 3
 	ACTOR = 4
 
-def get_names_under_mouse(mouse, entities, fov_map):
+def get_names_under_mouse(mouse, entities, game_map, players):
 	(x, y) = (mouse.cx, mouse.cy)
 
 	names = [entity.name for entity in entities
-			if entity.x == x and entity.y == y and libtcod.map_is_in_fov(fov_map, entity.x, entity.y)]
+			if entity.x == x and entity.y == y and any(libtcod.map_is_in_fov(player.vision.fov_map, entity.x, entity.y) for player in players)]
 	names = ', '.join(names)
+	if x < game_map.width and x >= 0 and y <game_map.height and y>= 0 and game_map.tiles[x][y].explored:
+		if names != '':
+			names += ', '
+		names += game_map.tiles[x][y].name
 
 	return names.capitalize()
 
@@ -46,23 +50,30 @@ def render_all(con, panel, entities, players, active_player, game_map, fov_recom
 				for player in players:
 					visible |= libtcod.map_is_in_fov(player.vision.fov_map, x, y)
 				wall = game_map.tiles[x][y].block_sight
+				tile = game_map.tiles[x][y]
 
 				# Use light colors if the tile is visible
 				if visible:
-					if wall:
-						libtcod.console_set_char_background(con, x, y, colors.get('light_wall'), libtcod.BKGND_SET)
+					# Draw the char if it exists
+					if tile.char:
+						libtcod.console_set_default_foreground(con, tile.light_color)
+						libtcod.console_put_char(con, x, y, tile.char, libtcod.BKGND_NONE)
+					# Otherwise change the background color
 					else:
-						libtcod.console_set_char_background(con, x, y, colors.get('light_ground'), libtcod.BKGND_SET)
-
-					game_map.tiles[x][y].explored = True
+						libtcod.console_set_char_background(con, x, y, tile.light_color, libtcod.BKGND_SET)
+					
+					tile.explored = True
 				# And dark colors otherwise
 				#else: #fully explored for debug
-				elif game_map.tiles[x][y].explored:
-					if wall:
-						libtcod.console_set_char_background(con, x, y, colors.get('dark_wall'), libtcod.BKGND_SET)
+				elif tile.explored:
+					# Draw the char if it exists
+					if tile.char:
+						libtcod.console_set_default_foreground(con, tile.dark_color)
+						libtcod.console_put_char(con, x, y, tile.char, libtcod.BKGND_NONE)
+					# Otherwise change the background color
 					else:
-						libtcod.console_set_char_background(con, x, y, colors.get('dark_ground'), libtcod.BKGND_SET)
-
+						libtcod.console_set_char_background(con, x, y, tile.dark_color, libtcod.BKGND_SET)
+					
 	# Draw all entities in the list
 	entities_in_render_order = sorted(entities, key=lambda x: x.render_order.value)
 
@@ -95,7 +106,7 @@ def render_all(con, panel, entities, players, active_player, game_map, fov_recom
 
 	libtcod.console_set_default_foreground(panel, libtcod.light_gray)
 	libtcod.console_print_ex(panel, 1, 0, libtcod.BKGND_NONE, libtcod.LEFT,
-							get_names_under_mouse(mouse, entities, players[0].vision.fov_map))
+							get_names_under_mouse(mouse, entities, game_map, players))
 
 	libtcod.console_blit(panel, 0, 0, screen_width, panel_height, 0, 0, panel_y)
 
@@ -113,9 +124,9 @@ def render_all(con, panel, entities, players, active_player, game_map, fov_recom
 	elif game_state == GameStates.CHARACTER_SCREEN:
 		character_screen(players[active_player], 30, 10, screen_width, screen_height)
 
-def clear_all(con, entities):
+def clear_all(con, entities, game_map):
 	for entity in entities:
-		clear_entity(con, entity)
+		clear_entity(con, entity, game_map)
 
 
 def draw_entity(con, entity, fov_map, game_map):
@@ -124,5 +135,10 @@ def draw_entity(con, entity, fov_map, game_map):
 		libtcod.console_put_char(con, entity.x, entity.y, entity.char, libtcod.BKGND_NONE)
 
 # Erase the character that represents this object
-def clear_entity(con, entity):
-	libtcod.console_put_char(con, entity.x, entity.y, ' ', libtcod.BKGND_NONE)
+def clear_entity(con, entity, game_map):
+	if game_map.tiles[entity.x][entity.y].explored:
+		libtcod.console_set_default_foreground(con, game_map.tiles[entity.x][entity.y].dark_color)
+		char = ' '
+		if game_map.tiles[entity.x][entity.y].char:
+			char = game_map.tiles[entity.x][entity.y].char
+			libtcod.console_put_char(con, entity.x, entity.y, char, libtcod.BKGND_NONE)

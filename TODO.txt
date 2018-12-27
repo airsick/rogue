@@ -1,0 +1,17 @@
+TODO:
+Overhaul combat
+	Some kind of nondeterministic system
+Improved Monster AI
+	Monster FOV?
+Monster Factories
+Monster data file?
+Map generation viewer
+Dungeon map generators
+	BSP
+	Tunnelers
+	Mayber Cellular automata
+Town generator
+Overworld data structures
+	Start game on overworld
+	Moving between overworld tiles
+	Travel Map
