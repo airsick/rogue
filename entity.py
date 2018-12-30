@@ -84,8 +84,10 @@ class Entity:
 		dx = int(round(dx / distance))
 		dy = int(round(dy / distance))
 
-		if not (game_map.is_blocked(self.x + dx, self.y + dy) or
-					get_blocking_entities_at_location(entities, self.x + dx, self.y + dy)):
+		if not (self.x+dx < 0 or self.y+dy < 0 or
+				self.x+dx >= game_map.width or self.y+dy >= game_map.height or
+				get_blocking_entities_at_location(entities, self.x + dx, self.y + dy) or 
+				game_map.is_blocked(self.x + dx, self.y + dy)):
 			self.move(dx, dy)
 			return True
 		return False

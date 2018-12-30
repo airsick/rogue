@@ -18,23 +18,23 @@ from item_functions import heal, cast_lightning, cast_fireball, cast_confuse
 
 from map_objects.tile import Tile
 from map_objects.rectangle import Rect
-from map_objects.generator_functions import make_map
+from map_objects.generator_functions import make_map, make_town
 
 from random_utils import from_dungeon_level, random_choice_from_dict
 
 
 class GameMap:
-	def __init__(self, width, height, dungeon_level=1, generator=make_map):
+	def __init__(self, width, height, walls=True, dungeon_level=1, generator=make_map):
 		self.width = width
 		self.height = height
-		self.tiles = self.initialize_tiles()
-
-		self.dungeon_level = dungeon_level
+		self.tiles = self.initialize_tiles(walls)
 		self.make_map = generator
 
-	def initialize_tiles(self):
+		self.dungeon_level = dungeon_level
+
+	def initialize_tiles(self, walls=True):
 		# Make a big ol' pile of floor tiles
-		tiles = [[Tile(True, "Wall", libtcod.Color(130, 110, 50), libtcod.Color(0,0,100), char='#') for y in range(self.height)] for x in range(self.width)]
+		tiles = [[Tile(walls, "Wall" if walls else "Floor", libtcod.Color(130, 110, 50), libtcod.Color(0,0,100), char='#' if walls else '.') for y in range(self.height)] for x in range(self.width)]
 
 		return tiles
 
@@ -162,7 +162,6 @@ class GameMap:
 		for player in players:
 			entities.append(player)
 
-		self.tiles = self.initialize_tiles()
 		self.make_map(self, constants['max_rooms'], constants['room_min_size'], constants['room_max_size'],
 					  constants['map_width'], constants['map_height'], players, entities)
 

@@ -43,46 +43,10 @@ def render_bar(panel, x, y, total_width, name, value, maximum, bar_color, back_c
 def render_all(con, panel, entities, players, active_player, game_map, fov_recompute, message_log, screen_width, screen_height, bar_width,
 					panel_height, panel_y, mouse, colors, game_state):
 	if fov_recompute:
-		# Draw all the tiles in the game map
-		for y in range(game_map.height):
-			for x in range(game_map.width):
-				visible = libtcod.map_is_in_fov(players[0].vision.fov_map, x, y)
-				for player in players:
-					visible |= libtcod.map_is_in_fov(player.vision.fov_map, x, y)
-				wall = game_map.tiles[x][y].block_sight
-				tile = game_map.tiles[x][y]
-
-				# Use light colors if the tile is visible
-				if visible:
-					# Draw the char if it exists
-					if tile.char:
-						libtcod.console_set_default_foreground(con, tile.light_color)
-						libtcod.console_put_char(con, x, y, tile.char, libtcod.BKGND_NONE)
-					# Otherwise change the background color
-					else:
-						libtcod.console_set_char_background(con, x, y, tile.light_color, libtcod.BKGND_SET)
-					
-					tile.explored = True
-				# And dark colors otherwise
-				#else: #fully explored for debug
-				elif tile.explored:
-					# Draw the char if it exists
-					if tile.char:
-						libtcod.console_set_default_foreground(con, tile.dark_color)
-						libtcod.console_put_char(con, x, y, tile.char, libtcod.BKGND_NONE)
-					# Otherwise change the background color
-					else:
-						libtcod.console_set_char_background(con, x, y, tile.dark_color, libtcod.BKGND_SET)
-					
+		render_map(con, players, game_map, screen_width, screen_height)
+						
 	# Draw all entities in the list
-	entities_in_render_order = sorted(entities, key=lambda x: x.render_order.value)
-
-	for entity in entities_in_render_order:
-		for player in players:
-			draw_entity(con, entity, player.vision.fov_map, game_map)
-
-	
-	libtcod.console_blit(con, 0, 0, screen_width, screen_height, 0, 0, 0)
+	render_entities(con, entities, players, game_map, screen_width, screen_height)
 
 	# Render bars
 	libtcod.console_set_default_background(panel, libtcod.black)
@@ -128,9 +92,61 @@ def clear_all(con, entities, game_map):
 	for entity in entities:
 		clear_entity(con, entity, game_map)
 
+def render_map(con, players, game_map, screen_width, screen_height, all_visible=False):
+	# Draw all the tiles in the game map
+	for y in range(game_map.height):
+		for x in range(game_map.width):
+			# Decide if this tile is visible
+			# all_visible = True (debug mode), then all tiles will be visible
+			visible = True
 
-def draw_entity(con, entity, fov_map, game_map):
-	if libtcod.map_is_in_fov(fov_map, entity.x, entity.y) or (entity.stairs and game_map.tiles[entity.x][entity.y].explored):
+			# Otherwise, see if the players can see it
+			if not all_visible:
+				visible = libtcod.map_is_in_fov(players[0].vision.fov_map, x, y)
+				for player in players:
+					visible |= libtcod.map_is_in_fov(player.vision.fov_map, x, y)
+			wall = game_map.tiles[x][y].block_sight
+			tile = game_map.tiles[x][y]
+
+			# Use light colors if the tile is visible
+			if visible:
+				# Draw the char if it exists
+				if tile.char:
+					libtcod.console_set_default_foreground(con, tile.light_color)
+					libtcod.console_put_char(con, x, y, tile.char, libtcod.BKGND_NONE)
+				# Otherwise change the background color
+				else:
+					libtcod.console_set_char_background(con, x, y, tile.light_color, libtcod.BKGND_SET)
+				
+				tile.explored = True
+			# And dark colors otherwise
+			#else: #fully explored for debug
+			elif tile.explored:
+				# Draw the char if it exists
+				if tile.char:
+					libtcod.console_set_default_foreground(con, tile.dark_color)
+					libtcod.console_put_char(con, x, y, tile.char, libtcod.BKGND_NONE)
+				# Otherwise change the background color
+				else:
+					libtcod.console_set_char_background(con, x, y, tile.dark_color, libtcod.BKGND_SET)
+
+	libtcod.console_blit(con, 0, 0, screen_width, screen_height, 0, 0, 0)
+
+def render_entities(con, entities, players, game_map, screen_width, screen_height, all_visible=False):
+	entities_in_render_order = sorted(entities, key=lambda x: x.render_order.value)
+
+	for entity in entities_in_render_order:
+		for player in players:
+			draw_entity(con, entity, player.vision.fov_map, game_map, all_visible=all_visible)
+
+	
+	libtcod.console_blit(con, 0, 0, screen_width, screen_height, 0, 0, 0)
+
+def draw_entity(con, entity, fov_map, game_map, all_visible=False):
+	visible = True
+	if not all_visible:
+		visible = libtcod.map_is_in_fov(fov_map, entity.x, entity.y) or (entity.stairs and game_map.tiles[entity.x][entity.y].explored)
+	if visible:
 		libtcod.console_set_default_foreground(con, entity.color)
 		libtcod.console_put_char(con, entity.x, entity.y, entity.char, libtcod.BKGND_NONE)
 

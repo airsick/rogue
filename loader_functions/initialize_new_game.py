@@ -16,6 +16,7 @@ from game_messages import MessageLog
 from game_states import GameStates
 
 from map_objects.game_map import GameMap
+from map_objects.generator_functions import make_map, make_town
 
 from render_functions import RenderOrder
 
@@ -88,6 +89,22 @@ def get_constants():
 
 def get_game_variables(constants):
 	entities = []
+	players = get_players(constants, entities)
+	# Create the game map
+	game_map = GameMap(constants['map_width'], constants['map_height'])
+	#game_map.make_map = make_town
+	#make_map(game_map, constants['max_rooms'], constants['room_min_size'], constants['room_max_size'], constants['map_width'], constants['map_height'], players, entities)
+	make_town(game_map, constants['max_rooms'], constants['room_min_size'], constants['room_max_size'], constants['map_width'], constants['map_height'], players, entities)
+
+	# Message log
+	message_log = MessageLog(constants['message_x'], constants['message_width'], constants['message_height'])
+
+	# Keep track of who's turn it is
+	game_state = GameStates.PLAYERS_TURN
+
+	return players, entities, game_map, message_log, game_state
+
+def get_players(constants,entities):
 	players = []
 
 	for i in range(constants['player_count']):
@@ -109,14 +126,5 @@ def get_game_variables(constants):
 		players[-1].equipment.toggle_equip(dagger)
 
 		entities.append(players[-1])
-	# Create the game map
-	game_map = GameMap(constants['map_width'], constants['map_height'])
-	game_map.make_map(game_map, constants['max_rooms'], constants['room_min_size'], constants['room_max_size'], constants['map_width'], constants['map_height'], players, entities)
 
-	# Message log
-	message_log = MessageLog(constants['message_x'], constants['message_width'], constants['message_height'])
-
-	# Keep track of who's turn it is
-	game_state = GameStates.PLAYERS_TURN
-
-	return players, entities, game_map, message_log, game_state
+	return players

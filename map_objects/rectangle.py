@@ -13,10 +13,14 @@ class Rect:
 	# Returns true if this rectangle intersects with another one
 	def intersect(self, other):
 		# Rectangles encompass entirely different spaces
-		"""return ((self.x1 <= other.x2 and self.x1 >= other.x1 and self.y1 <= other.y2 and self.y1 >= other.y1) or
-				(self.x2 <= other.x2 and self.x2 >= other.x1 and self.y1 <= other.y2 and self.y1 >= other.y1) or
-				(self.x1 <= other.x2 and self.x1 >= other.x1 and self.y2 <= other.y2 and self.y2 >= other.y1) or
-				(self.x2 <= other.x2 and self.x2 >= other.x1 and self.y2 <= other.y2 and self.y2 >= other.y1))"""
+		if self.x1 > other.x2 or self.x2 < other.x1:
+			return False
+		if self.y1 > other.y2 or self.y2 < other.y1:
+			return False
+		return True
+
+	# Returns true if this rectangle is entirely within another one
+	def encompass(self, other):
 		# Rectangles don't entirely eat other rectangles
 		return (self.x1 <= other.x2 and self.x2 >= other.x1 and
 				self.y1 <= other.y2 and self.y2 >= other.y2)

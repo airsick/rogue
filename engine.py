@@ -215,7 +215,9 @@ class Game:
 				destination_y = players[self.active_player].y + dy
 
 
-				if not game_map.is_blocked(destination_x, destination_y):
+				if not (destination_x < 0 or destination_x >= game_map.width or 
+						destination_y < 0 or destination_y >= game_map.height or
+						game_map.is_blocked(destination_x, destination_y)):
 					target = get_blocking_entities_at_location(entities, destination_x, destination_y)
 
 					# If the way is blocked by a baddie
