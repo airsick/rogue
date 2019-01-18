@@ -42,6 +42,7 @@ class MapViewer:
 
 			if mouse.lbutton_pressed:
 				# Clear all entities except players
+				game_map.dungeon_level += 1
 				entities = entities[:self.constants['player_count']]
 				make_town(game_map, self.constants['max_rooms'], self.constants['room_min_size'], self.constants['room_max_size'], self.constants['map_width'], self.constants['map_height'], players, entities)
 

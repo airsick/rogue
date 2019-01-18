@@ -63,9 +63,9 @@ class GameMap:
 		number_of_items = randint(0, max_items_per_room)
 
 		monster_chances = {
-			'rat': from_dungeon_level([[80, 1], [40, 3], [20, 5],[5,7]], self.dungeon_level),
-			'orc': from_dungeon_level([[20, 1], [35, 3], [50, 5],[35,7]], self.dungeon_level),
-			'troll': from_dungeon_level([[15, 3], [30, 5], [60, 7]], self.dungeon_level)
+			'rat': from_dungeon_level([[80, 1], [40, 3], [20, 5], [ 0, 7]], self.dungeon_level),
+			'orc': from_dungeon_level([[20, 1], [35, 3], [50, 5], [40, 7]], self.dungeon_level),
+			'troll': from_dungeon_level([       [15, 3], [30, 5], [60, 7]], self.dungeon_level)
 		}
 		item_chances = {
 			'healing_potion': 35,
